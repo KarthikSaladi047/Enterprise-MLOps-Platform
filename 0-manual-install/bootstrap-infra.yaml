@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: 'https://github.com/KarthikSaladi047/Enterprise-MLOps-Platform.git'
     targetRevision: main
-    path: 1-infrastructure
+    path: 1-infrastructure/argo-applications
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: argocd
