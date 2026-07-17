@@ -2,9 +2,7 @@ import kfp
 from kfp import dsl
 from kfp import compiler
 
-# ==========================================
 # Component 1: Data Preparation (via DVC)
-# ==========================================
 @dsl.component(
     base_image="python:3.10",
     packages_to_install=["pandas", "dvc[s3]"]
@@ -18,9 +16,6 @@ def prep_data(dataset: dsl.Output[dsl.Dataset]):
     key = os.environ.get("AWS_ACCESS_KEY_ID")
     secret = os.environ.get("AWS_SECRET_ACCESS_KEY")
     git_repo_url = os.environ.get("GIT_REPO_URL")
-    
-    if not git_repo_url:
-        raise ValueError("GIT_REPO_URL is missing from the environment variables!")
     
     print(f"Cloning Git repository: {git_repo_url}...")
     subprocess.run(["git", "clone", git_repo_url, "/tmp/repo"], check=True)
@@ -40,9 +35,7 @@ def prep_data(dataset: dsl.Output[dsl.Dataset]):
     df.to_csv(dataset.path, index=False)
     print("Data prepped and saved to KFP artifact storage.")
 
-# ==========================================
 # Component 2: Training & Push to Model Registry
-# ==========================================
 @dsl.component(
     base_image="python:3.10-slim",
     packages_to_install=[
@@ -139,9 +132,7 @@ def train_and_register(dataset: dsl.Input[dsl.Dataset]):
         )
         print("Success! Smart model is now in the Registry.")
 
-# ==========================================
 # Pipeline Definition
-# ==========================================
 @dsl.pipeline(
     name="enterprise-text-classification-pipeline",
     description="Pulls a dataset via DVC/Git, trains, and registers a model."
