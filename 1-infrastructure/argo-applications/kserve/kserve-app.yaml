@@ -7,7 +7,7 @@ spec:
   project: default
 
   source:
-    repoURL: oci://ghcr.io/kserve/charts
+    repoURL: ghcr.io/kserve/charts
     chart: kserve-resources
     targetRevision: v0.18.0
     helm:
