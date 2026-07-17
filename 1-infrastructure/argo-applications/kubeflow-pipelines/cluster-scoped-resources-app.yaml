@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kubeflow-pipelines-cluster
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/kubeflow/pipelines.git
+    targetRevision: 2.17.0
+    path: manifests/kustomize/cluster-scoped-resources
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kubeflow
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

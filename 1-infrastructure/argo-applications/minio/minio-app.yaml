@@ -1,0 +1,44 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: minio
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://charts.min.io/
+    chart: minio
+    targetRevision: "*"
+    helm:
+      values: |
+        existingSecret: "minio-creds"
+
+        persistence:
+          enabled: true
+          size: 100Gi
+
+        buckets:
+          - name: dvc-storage
+            policy: none
+          - name: mlflow-artifacts
+            policy: none
+          - name: kserve-models
+            policy: none
+
+        nodeSelector:
+          node-role.kubernetes.io/infra: "true"
+
+        consoleService:
+          type: NodePort
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: minio
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

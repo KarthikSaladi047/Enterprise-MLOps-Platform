@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: minio
+  labels:
+    name: minio
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio-creds
+  namespace: minio
+type: Opaque
+stringData:
+  rootUser: <CHOOSE-A-USERNAME>
+  rootPassword: <CHOOSE-A-STRONG-PASSWORD>
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mlflow
+  labels:
+    name: mlflow
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secret
+  namespace: mlflow
+type: Opaque
+stringData:
+  postgres-password: <CHOOSE-A-STRONG-ADMIN-PASSWORD>
+  password: <CHOOSE-A-STRONG-USER-PASSWORD>
+  replication-password: <CHOOSE-A-STRONG-REPL-PASSWORD>
+  mlflow-uri: postgresql+psycopg2://mlflow_user:<SAME-USER-PASSWORD>@postgres-postgresql.mlflow.svc.cluster.local:5432/mlflow
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio-creds
+  namespace: mlflow
+type: Opaque
+stringData:
+  rootUser: <SAME-VALUE-AS-STEP-3>
+  rootPassword: <SAME-VALUE-AS-STEP-3>
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kserve-minio-secret
+  namespace: default
+  annotations:
+    serving.kserve.io/s3-endpoint: minio.minio.svc.cluster.local:9000
+    serving.kserve.io/s3-region: us-east-1
+    serving.kserve.io/s3-usehttps: "0"
+type: Opaque
+stringData:
+  AWS_ACCESS_KEY_ID: <SAME-VALUE-AS-STEP-3>
+  AWS_SECRET_ACCESS_KEY: <SAME-VALUE-AS-STEP-3>
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubeflow
+  labels:
+    name: kubeflow
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: infra-credentials
+  namespace: kubeflow
+type: Opaque
+stringData:
+  # MinIO access (same values as step 3)
+  AWS_ACCESS_KEY_ID: <MINIO-ROOT-USER>
+  AWS_SECRET_ACCESS_KEY: <MINIO-ROOT-PASSWORD>
+  AWS_DEFAULT_REGION: us-east-1
+  AWS_ENDPOINT_URL: http://minio.minio.svc.cluster.local:9000
+  MLFLOW_TRACKING_URI: http://mlflow.mlflow.svc.cluster.local:5000
+  GIT_REPO_URL: https://github.com/KarthikSaladi047/Enterprise-MLOps-Platform.git
+  GITHUB_TOKEN: <YOUR-GITHUB-PAT>
+---

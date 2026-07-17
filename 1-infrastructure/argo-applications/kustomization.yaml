@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - argo-events/argo-events-app.yaml
+  - argo-workflows/argo-workflows-app.yaml
+  - katib/katib-app.yaml
+  - kserve/cert-manager-app.yaml
+  - kserve/kserve-crd-app.yaml
+  - kserve/kserve-app.yaml
+  - kserve/kserve-runtimes-app.yaml
+  - kserve/kserve-istio-knative-app.yaml
+  - kubeflow-pipelines/cluster-scoped-resources-app.yaml
+  - kubeflow-pipelines/kubeflow-pipelines-app.yaml
+  - minio/minio-app.yaml
+  - mlflow/postgres-app.yaml
+  - mlflow/mlflow-app.yaml
+  - model-serving/serving-canary-app.yaml
+  - model-serving/serving-production-app.yaml
