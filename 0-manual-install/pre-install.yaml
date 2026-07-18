@@ -43,6 +43,7 @@ type: Opaque
 stringData:
   rootUser: <SAME-VALUE-AS-STEP-3>
   rootPassword: <SAME-VALUE-AS-STEP-3>
+  url: http://minio.minio.svc.cluster.local:9000
 ---
 apiVersion: v1
 kind: Secret
@@ -78,6 +79,7 @@ stringData:
   AWS_DEFAULT_REGION: us-east-1
   AWS_ENDPOINT_URL: http://minio.minio.svc.cluster.local:9000
   MLFLOW_TRACKING_URI: http://mlflow.mlflow.svc.cluster.local:5000
+  KUBEFLOW_HOST: http://ml-pipeline.kubeflow.svc.cluster.local:8888
   GIT_REPO_URL: https://github.com/KarthikSaladi047/Enterprise-MLOps-Platform.git
   GITHUB_TOKEN: <YOUR-GITHUB-PAT>
 ---

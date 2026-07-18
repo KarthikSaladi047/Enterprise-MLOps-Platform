@@ -19,6 +19,11 @@ spec:
             secretKeyRef:
               name: infra-credentials
               key: GIT_REPO_URL
+        - name: KUBEFLOW_HOST
+          valueFrom:
+            secretKeyRef:
+            name: infra-credentials
+            key: KUBEFLOW_HOST
         image: python:3.10
         command: ["/bin/bash", "-c"]
         args:
@@ -46,7 +51,7 @@ spec:
             MAX_ATTEMPTS = 3
             ACTIVE_STATES = {"PENDING", "RUNNING", "PAUSED", "CANCELING"}
 
-            client = kfp.Client(host="http://ml-pipeline.kubeflow.svc.cluster.local:8888")
+            client = kfp.Client(host=os.environ["KUBEFLOW_HOST"])
 
             try:
                 experiment = client.get_experiment(experiment_name=EXPERIMENT_NAME, namespace='kubeflow')

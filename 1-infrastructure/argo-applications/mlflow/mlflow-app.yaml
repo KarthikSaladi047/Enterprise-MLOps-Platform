@@ -35,7 +35,10 @@ spec:
                 name: minio-creds
                 key: rootPassword
           - name: AWS_ENDPOINT_URL
-            value: http://minio.minio.svc.cluster.local:9000
+            valueFrom:
+              secretKeyRef:
+                name: minio-creds
+                key: url
 
         service:
           type: NodePort
