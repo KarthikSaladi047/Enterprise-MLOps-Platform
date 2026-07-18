@@ -43,3 +43,5 @@ with gr.Blocks(title="MLOps Text Classifier", theme=gr.themes.Soft()) as demo:
 if __name__ == "__main__":
     # Server name 0.0.0.0 is required for Docker/Kubernetes routing
     demo.launch(server_name="0.0.0.0", server_port=7860)
+
+## adding comments to test the github actions workflow for the mlops-ui build and deploy pipeline
