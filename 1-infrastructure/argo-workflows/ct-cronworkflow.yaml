@@ -28,7 +28,7 @@ spec:
             pip install --quiet --no-cache-dir kfp==2.* kfp-kubernetes
 
             git clone --depth 1 --branch main $GIT_REPO_URL /tmp/repo
-            cd /tmp/repo
+            cd /tmp/repo/2-ml-workspace/
 
             export GIT_SHA=$(git rev-parse --short HEAD)
             echo "Latest commit on main is: $GIT_SHA"
