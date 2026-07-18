@@ -1,0 +1,24 @@
+grafana:
+  nodeSelector:
+    node-role.kubernetes.io/infra: "true"
+
+prometheus:
+  prometheusSpec:
+    nodeSelector:
+      node-role.kubernetes.io/infra: "true"
+
+alertmanager:
+  alertmanagerSpec:
+    nodeSelector:
+      node-role.kubernetes.io/infra: "true"
+
+prometheusOperator:
+  nodeSelector:
+    node-role.kubernetes.io/infra: "true"
+
+kube-state-metrics:
+  nodeSelector:
+    node-role.kubernetes.io/infra: "true"
+
+prometheus-windows-exporter:
+  enabled: false
