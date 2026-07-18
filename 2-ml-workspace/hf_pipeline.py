@@ -29,7 +29,7 @@ def prep_data(dataset: dsl.Output[dsl.Dataset]):
     print("Pulling data from MinIO via DVC...")
     subprocess.run(["dvc", "pull", "-r", "minio-remote"], check=True)
     
-    df = pd.read_csv("dataset.csv")
+    df = pd.read_csv("data/dataset.csv")
     print(f"Successfully loaded {len(df)} rows from DVC.")
     
     df.to_csv(dataset.path, index=False)
