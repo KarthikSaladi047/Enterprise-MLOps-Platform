@@ -2,6 +2,7 @@ import gradio as gr
 import requests
 import os
 
+# Set the API URL for the FastAPI Gateway
 API_URL = os.getenv("API_URL", "http://api-gateway:8000/predict")
 
 def classify_text(text):
