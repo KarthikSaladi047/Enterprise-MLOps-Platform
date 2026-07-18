@@ -114,7 +114,7 @@ def train_and_register(dataset: dsl.Input[dsl.Dataset]):
         print(f"Epoch {epoch+1}/{epochs} | Average Loss: {avg_loss:.4f}")
 
     # 5. Log to MLflow Registry
-    mlflow.set_experiment("huggingface-text-classification")
+    mlflow.set_experiment("enterprise-text-classifier")
     with mlflow.start_run():
         mlflow.log_param("epochs", epochs)
         mlflow.log_param("batch_size", 16)
