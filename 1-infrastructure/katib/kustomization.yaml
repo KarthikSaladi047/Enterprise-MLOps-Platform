@@ -5,6 +5,17 @@ resources:
   - github.com/kubeflow/katib.git/manifests/v1beta1/installs/katib-standalone?ref=v0.17.0
 
 patches:
+  # Remove Namespace
+  - target:
+      kind: Namespace
+      name: kubeflow
+    patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: kubeflow
+
   - target:
       kind: Deployment
     patch: |-
