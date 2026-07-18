@@ -9,7 +9,7 @@ spec:
   source:
     repoURL: https://github.com/KarthikSaladi047/Enterprise-MLOps-Platform.git
     targetRevision: main
-    path: 1-infrastructure/kserve-manifests
+    path: 1-infrastructure/model-manifests
 
   destination:
     server: https://kubernetes.default.svc
