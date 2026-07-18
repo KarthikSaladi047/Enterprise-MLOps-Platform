@@ -9,7 +9,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/enterprise-mlops-platform/mlops-ui
+  IMAGE_NAME: ${{ github.repository }}/mlops-ui
 
 jobs:
   build-and-update:
@@ -47,7 +47,7 @@ jobs:
           context: 4-user-interface
           file: 4-user-interface/Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ steps.vars.outputs.lower_repo }}/enterprise-mlops-platform/mlops-ui:${{ steps.vars.outputs.sha_short }}
+            tags: ${{ env.REGISTRY }}/${{ steps.vars.outputs.lower_repo }}/mlops-ui:${{ steps.vars.outputs.sha_short }}
 
       - name: Update Kubernetes Manifests
         run: |
