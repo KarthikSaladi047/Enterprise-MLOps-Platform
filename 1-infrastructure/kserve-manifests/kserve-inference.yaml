@@ -1,0 +1,24 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: enterprise-text-classifier
+  namespace: default
+spec:
+  predictor:
+    nodeSelector:
+      node-role.kubernetes.io/apps: 'true'
+    tolerations:
+    - key: dedicated
+      operator: Equal
+      value: apps
+      effect: NoSchedule
+    serviceAccountName: kserve-sa
+    model:
+      modelFormat:
+        name: mlflow
+      storageUri: s3://mlflow-artifacts/1/models/m-5cd28a3bcdb04830b3c3016e59d221eb/artifacts
+    canaryTrafficPercent: 10
+    canary:
+      modelFormat:
+        name: mlflow
+      storageUri: s3://mlflow-artifacts/1/models/m-4ddc29bf22d84b3abc11fdf77b5255b0/artifacts
