@@ -11,7 +11,7 @@ app = FastAPI(
 
 KSERVE_URL = os.getenv(
     "KSERVE_URL", 
-    "http://enterprise-text-classifier.default.svc.cluster.local/v2/models/huggingface-classifier/infer"
+    "http://enterprise-text-classifier.default.svc.cluster.local/v2/models/enterprise-text-classifier/infer"
 )
 
 # 2. Pydantic Models for strict input/output validation
