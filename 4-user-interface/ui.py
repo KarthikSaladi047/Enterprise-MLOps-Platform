@@ -2,7 +2,6 @@ import gradio as gr
 import requests
 import os
 
-# The internal Kubernetes service name for our FastAPI backend
 API_URL = os.getenv("API_URL", "http://api-gateway:8000/predict")
 
 def classify_text(text):
