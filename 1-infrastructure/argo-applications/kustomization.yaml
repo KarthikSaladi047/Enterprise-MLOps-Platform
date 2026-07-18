@@ -17,3 +17,4 @@ resources:
   - mlflow/mlflow-app.yaml
   - model-serving/serving-canary-app.yaml
   - model-serving/serving-production-app.yaml
+  - monitoring/kube-prometheus-stack-app.yaml
