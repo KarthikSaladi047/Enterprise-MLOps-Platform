@@ -19,7 +19,7 @@ def prep_data(dataset: dsl.Output[dsl.Dataset]):
     
     print(f"Cloning Git repository: {git_repo_url}...")
     subprocess.run(["git", "clone", git_repo_url, "/tmp/repo"], check=True)
-    os.chdir("/tmp/repo")
+    os.chdir("/tmp/repo/2-ml-workspace")
     
     print("Configuring DVC credentials...")
     subprocess.run(["dvc", "remote", "modify", "--local", "minio-remote", "endpointurl", endpoint], check=True)
