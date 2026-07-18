@@ -22,7 +22,7 @@ spec:
             effect: "NoSchedule"
       containers:
       - name: gradio
-        image: ghcr.io/karthiksaladi047/enterprise-mlops-platform/mlops-ui:e8c9297
+        image: ghcr.io/karthiksaladi047/enterprise-mlops-platform/mlops-ui:a494a61
         command: ["python3", "ui.py"]
         env:
         # Point the UI to the FastAPI internal Service DNS
