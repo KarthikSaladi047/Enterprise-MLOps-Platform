@@ -22,8 +22,8 @@ spec:
         - name: KUBEFLOW_HOST
           valueFrom:
             secretKeyRef:
-            name: infra-credentials
-            key: KUBEFLOW_HOST
+              name: infra-credentials
+              key: KUBEFLOW_HOST
         image: python:3.10
         command: ["/bin/bash", "-c"]
         args:
