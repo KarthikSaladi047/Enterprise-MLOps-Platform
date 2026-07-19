@@ -19,6 +19,16 @@ spec:
                 secretKeyRef:
                   name: infra-credentials
                   key: GITHUB_TOKEN
+            - name: GIT_REPO_URL
+              valueFrom:
+                secretKeyRef:
+                  name: infra-credentials
+                  key: GIT_REPO_URL
+            - name: GITHUB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: infra-credentials
+                  key: GITHUB_USERNAME
             - name: MLFLOW_TRACKING_URI
               valueFrom:
                 secretKeyRef:
@@ -31,13 +41,14 @@ spec:
               export GIT_TERMINAL_PROMPT=0
               
               # Install required system tools and Python libraries
-              apt-get update && apt-get install -y git
+              apt-get update && apt-get install -y --no-install-recommends git ca-certificates
+              rm -rf /var/lib/apt/lists/*
               pip install --quiet --no-cache-dir mlflow==3.14.0 pyyaml requests
               
               # 1. Clone your repository
-              git clone https://github.com/KarthikSaladi047/MLOps-with-Kubeflow.git /tmp/repo
-              cd /tmp/repo
-              git checkout ArgoCD
+              AUTH_REPO_URL="https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@${GIT_REPO_URL#https://}"
+              git clone --branch main "$AUTH_REPO_URL" /tmp/repo
+              cd /tmp/repo/
               
               # 2. Inline Python script to check MLflow and update KServe spec
               cat << 'EOF' > sync.py
@@ -52,10 +63,11 @@ spec:
               
               def get_latest_uri(model_name):
                   try:
-                      versions = client.get_latest_versions(model_name)
+                      versions = client.search_model_versions(
+                          f"name='{model_name}'"
+                      )
                       if versions:
                           latest = max(versions, key=lambda v: int(v.version))
-                          # 🚨 THE FIX: Ask MLflow to resolve the absolute S3/MinIO path!
                           return client.get_model_version_download_uri(latest.name, latest.version)
                   except:
                       return None
@@ -68,7 +80,7 @@ spec:
                   print("No models found in registries.")
                   exit(0)
               
-              manifest_path = "Kserve/kserve-inference.yaml"
+              manifest_path = "1-infrastructure/model-manifests/kserve-inference.yaml"
               with open(manifest_path, "r") as f:
                   manifest = yaml.safe_load(f)
               
@@ -97,12 +109,11 @@ spec:
               # 4. Check for state differences, then conditionally commit and push
               git config --global user.name "gitops-bot"
               git config --global user.email "bot@mlops.local"
-              git remote set-url origin "https://KarthikSaladi047:${GITHUB_TOKEN}@github.com/KarthikSaladi047/MLOps-with-Kubeflow.git"
-              git add Kserve/kserve-inference.yaml
+              git add 1-infrastructure/model-manifests/kserve-inference.yaml
               
               if ! git diff --cached --quiet; then
                 git commit -m "GitOps: Automated KServe sync from MLflow promotion"
-                git push origin ArgoCD
+                git push origin main
                 echo "✅ Changes detected and successfully pushed to Git!"
               else
                 echo "💤 Manifest matches registry state. No changes to push."
