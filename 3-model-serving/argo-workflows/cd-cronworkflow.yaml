@@ -9,6 +9,7 @@ spec:
   startingDeadlineSeconds: 0
   workflowSpec:
     entrypoint: sync-pipeline
+    serviceAccountName: pipeline-runner
     templates:
       - name: sync-pipeline
         container:
