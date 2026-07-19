@@ -2,111 +2,168 @@ apiVersion: argoproj.io/v1alpha1
 kind: CronWorkflow
 metadata:
   name: continuous-training-job
-  namespace: kubeflow 
+  namespace: kubeflow
 spec:
-  schedule: "*/10 * * * *" 
-  concurrencyPolicy: "Replace"
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Replace
   startingDeadlineSeconds: 0
   workflowSpec:
     entrypoint: trigger-ct
-    serviceAccountName: pipeline-runner 
+    serviceAccountName: pipeline-runner
+
     templates:
     - name: trigger-ct
       container:
+        image: python:3.10
+        command:
+          - /bin/bash
+          - -c
         env:
         - name: GIT_REPO_URL
           valueFrom:
             secretKeyRef:
               name: infra-credentials
               key: GIT_REPO_URL
+
         - name: KUBEFLOW_HOST
           valueFrom:
             secretKeyRef:
               name: infra-credentials
               key: KUBEFLOW_HOST
-        image: python:3.10
-        command: ["/bin/bash", "-c"]
         args:
-          - |
-            set -e
-            export GIT_TERMINAL_PROMPT=0
-            pip install --quiet --no-cache-dir kfp==2.* kfp-kubernetes
+        - |
+          set -e
+          export GIT_TERMINAL_PROMPT=0
 
-            git clone --depth 1 --branch main $GIT_REPO_URL /tmp/repo
-            cd /tmp/repo/2-ml-workspace/
+          pip install --quiet --no-cache-dir kfp==2.* kfp-kubernetes
 
-            export GIT_SHA=$(git rev-parse --short HEAD)
-            echo "Latest commit on main is: $GIT_SHA"
+          echo "Cloning repository..."
+          git clone --depth 1 --branch main "$GIT_REPO_URL" /tmp/repo
+          cd /tmp/repo
 
-            python3 hf_pipeline.py
+          # Find latest commit that modified anything under 2-ml-workspace/
+          export PIPELINE_SHA=$(git log -1 --format=%H -- 2-ml-workspace/)
 
-            cat << 'EOF' > submit.py
-            import kfp
-            import os
-            import sys
+          echo "Latest pipeline commit:"
+          echo "$PIPELINE_SHA"
 
-            GIT_SHA = os.environ["GIT_SHA"]
-            RUN_NAME_PREFIX = f"enterprise-text-classifier-{GIT_SHA}"
-            EXPERIMENT_NAME = "enterprise-text-classifier"
-            MAX_ATTEMPTS = 3
-            ACTIVE_STATES = {"PENDING", "RUNNING", "PAUSED", "CANCELING"}
+          cd 2-ml-workspace
 
-            client = kfp.Client(host=os.environ["KUBEFLOW_HOST"])
+          # Generate pipeline yaml for the latest commit
+          python3 hf_pipeline.py
 
-            try:
-                experiment = client.get_experiment(experiment_name=EXPERIMENT_NAME, namespace='kubeflow')
-            except ValueError:
-                print(f"Experiment '{EXPERIMENT_NAME}' not found. Creating it now...")
-                experiment = client.create_experiment(EXPERIMENT_NAME, namespace='kubeflow')
+          cat <<'EOF' > submit.py
+          import kfp
+          import os
+          import re
+          import sys
 
-            def get_runs_for_commit():
-                runs = []
-                page_token = ""
-                while True:
-                    response = client.list_runs(
-                        experiment_id=experiment.experiment_id,
-                        page_token=page_token,
-                        page_size=100,
-                    )
-                    for r in (response.runs or []):
-                        if r.display_name and r.display_name.startswith(RUN_NAME_PREFIX):
-                            runs.append(r)
-                    page_token = response.next_page_token
-                    if not page_token:
-                        return runs
+          EXPERIMENT_NAME = "enterprise-text-classifier"
+          MAX_ATTEMPTS = 3
+          ACTIVE_STATES = {
+              "PENDING",
+              "RUNNING",
+              "PAUSED",
+              "CANCELING",
+          }
 
-            existing = get_runs_for_commit()
-            succeeded, active, failed = [], [], []
-            for r in existing:
-                state = (getattr(r, "state", "") or "").upper()
-                if state == "SUCCEEDED":
-                    succeeded.append(r)
-                elif state in ACTIVE_STATES:
-                    active.append(r)
-                else:
-                    failed.append(r)
+          PIPELINE_SHA = os.environ["PIPELINE_SHA"]
+          KUBEFLOW_HOST = os.environ["KUBEFLOW_HOST"]
 
-            if succeeded:
-                print(f"✅ Run for {GIT_SHA} already succeeded. Nothing to do.")
-                sys.exit(0)
+          RUN_PREFIX = f"enterprise-text-classifier-{PIPELINE_SHA}"
 
-            if active:
-                print(f"⏳ Run for {GIT_SHA} is still active ({len(active)} in-flight). Waiting.")
-                sys.exit(0)
+          client = kfp.Client(host=KUBEFLOW_HOST)
 
-            if len(failed) >= MAX_ATTEMPTS:
-                print(f"🛑 Run for {GIT_SHA} failed {len(failed)} times (max: {MAX_ATTEMPTS}). Not retrying.")
-                sys.exit(0)
+          try:
+              experiment = client.get_experiment(
+                  experiment_name=EXPERIMENT_NAME,
+                  namespace="kubeflow",
+              )
+          except ValueError:
+              print("Experiment does not exist. Creating...")
+              experiment = client.create_experiment(
+                  EXPERIMENT_NAME,
+                  namespace="kubeflow",
+              )
 
-            attempt = len(failed) + 1
-            run_name = f"{RUN_NAME_PREFIX}-attempt-{attempt}"
-            print(f"🚀 Submitting {run_name} to Kubeflow (attempt {attempt}/{MAX_ATTEMPTS})...")
-            client.create_run_from_pipeline_package(
-                pipeline_file='hf_pipeline.yaml',
-                run_name=run_name,
-                experiment_name=EXPERIMENT_NAME,
-                namespace='kubeflow'
-            )
-            EOF
+          runs = []
+          page_token = ""
 
-            python3 submit.py
+          while True:
+              response = client.list_runs(
+                  experiment_id=experiment.experiment_id,
+                  page_size=100,
+                  page_token=page_token,
+              )
+
+              runs.extend(response.runs or [])
+              if not response.next_page_token:
+                  break
+              page_token = response.next_page_token
+          matching = []
+
+          for run in runs:
+              name = run.display_name or ""
+              if not name.startswith(RUN_PREFIX):
+                  continue
+              match = re.match(
+                  rf"{RUN_PREFIX}-attempt-(\d+)$",
+                  name,
+              )
+
+              if not match:
+                  continue
+              attempt = int(match.group(1))
+              state = (run.state or "").upper()
+              matching.append((attempt, state))
+
+          succeeded = [
+              x for x in matching
+              if x[1] == "SUCCEEDED"
+          ]
+
+          active = [
+              x for x in matching
+              if x[1] in ACTIVE_STATES
+          ]
+
+          failed = [
+              x for x in matching
+              if x[1] not in ACTIVE_STATES
+              and x[1] != "SUCCEEDED"
+          ]
+
+          if succeeded:
+              print(f"✅ Commit {PIPELINE_SHA} already succeeded.")
+              sys.exit(0)
+
+          if active:
+              print(f"⏳ Commit {PIPELINE_SHA} is already running.")
+              sys.exit(0)
+
+          if len(failed) >= MAX_ATTEMPTS:
+              print(
+                  f"🛑 Commit {PIPELINE_SHA} already failed "
+                  f"{MAX_ATTEMPTS} times."
+              )
+              sys.exit(0)
+
+          attempt = len(failed) + 1
+
+          run_name = (
+              f"{RUN_PREFIX}-attempt-{attempt}"
+          )
+
+          print(f"🚀 Submitting {run_name}")
+
+          client.create_run_from_pipeline_package(
+              pipeline_file="hf_pipeline.yaml",
+              run_name=run_name,
+              experiment_name=EXPERIMENT_NAME,
+              namespace="kubeflow",
+          )
+
+          print("✅ Submission complete.")
+          EOF
+
+          python3 submit.py
