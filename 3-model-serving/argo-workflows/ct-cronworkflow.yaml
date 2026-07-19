@@ -4,7 +4,7 @@ metadata:
   name: continuous-training-job
   namespace: kubeflow 
 spec:
-  schedule: "*/30 * * * *" 
+  schedule: "*/10 * * * *" 
   concurrencyPolicy: "Replace"
   startingDeadlineSeconds: 0
   workflowSpec:

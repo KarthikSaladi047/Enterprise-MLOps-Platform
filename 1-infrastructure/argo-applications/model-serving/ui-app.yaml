@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: argo-workflows
+  name: ui-app
   namespace: argocd
 spec:
   project: default
@@ -9,11 +9,11 @@ spec:
   source:
     repoURL: https://github.com/KarthikSaladi047/Enterprise-MLOps-Platform.git
     targetRevision: main
-    path: 1-infrastructure/argo-workflows
+    path: 3-model-serving/ui-manifests
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: kubeflow
+    namespace: default
 
   syncPolicy:
     automated:

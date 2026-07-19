@@ -51,7 +51,7 @@ jobs:
 
       - name: Update Kubernetes Manifests
         run: |
-          cd 1-infrastructure/ui-manifests
+          cd 3-model-serving/ui-manifests
           
           # Construct the exact image name we just pushed
           NEW_IMAGE="${{ env.REGISTRY }}/${{ steps.vars.outputs.lower_repo }}/mlops-ui:${{ steps.vars.outputs.sha_short }}"
@@ -67,7 +67,7 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          git add 1-infrastructure/ui-manifests/ui.yaml 1-infrastructure/ui-manifests/api.yaml
+          git add 3-model-serving/ui-manifests/ui.yaml 3-model-serving/ui-manifests/api.yaml
           
           if ! git diff-index --quiet HEAD; then
             git commit -m "GitOps: Update UI image to ${{ steps.vars.outputs.sha_short }}"

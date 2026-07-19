@@ -4,7 +4,7 @@ metadata:
   name: continuous-delivery-job
   namespace: kubeflow
 spec:
-  schedule: "*/30 * * * *"
+  schedule: "*/10 * * * *"
   concurrencyPolicy: "Forbid"
   startingDeadlineSeconds: 0
   workflowSpec:
@@ -80,7 +80,7 @@ spec:
                   print("No models found in registries.")
                   exit(0)
               
-              manifest_path = "1-infrastructure/model-manifests/kserve-inference.yaml"
+              manifest_path = "3-model-serving/model-manifests/kserve-inference.yaml"
               with open(manifest_path, "r") as f:
                   manifest = yaml.safe_load(f)
               
@@ -109,7 +109,7 @@ spec:
               # 4. Check for state differences, then conditionally commit and push
               git config --global user.name "gitops-bot"
               git config --global user.email "bot@mlops.local"
-              git add 1-infrastructure/model-manifests/kserve-inference.yaml
+              git add 3-model-serving/model-manifests/kserve-inference.yaml
               
               if ! git diff --cached --quiet; then
                 git commit -m "GitOps: Automated KServe sync from MLflow promotion"

@@ -3,7 +3,6 @@ kind: Kustomization
 
 resources:
   - argo-events/argo-events-app.yaml
-  - argo-workflows/argo-workflows-app.yaml
   - katib/katib-app.yaml
   - kserve/cert-manager-app.yaml
   - kserve/kserve-crd-app.yaml
@@ -15,6 +14,7 @@ resources:
   - minio/minio-app.yaml
   - mlflow/postgres-app.yaml
   - mlflow/mlflow-app.yaml
-  - model-serving/kserve-app.yaml
   - monitoring/kube-prometheus-stack-app.yaml
-  - applications/ui-app.yaml
+  - model-serving/kserve-app.yaml
+  - model-serving/ui-app.yaml
+  - model-serving/argo-workflows-app.yaml
