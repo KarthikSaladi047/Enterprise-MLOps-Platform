@@ -83,3 +83,13 @@ stringData:
   GITHUB_TOKEN: <YOUR-GITHUB-PAT>
   GITHUB_USERNAME: <YOUR-GITHUB-USERNAME>
 ---
+# This secret is used by Argo Events to authenticate with GitHub for webhook events.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: github-webhook-secret
+  namespace: argo-events
+type: Opaque
+stringData:
+  token: <github-personal-access-token>
+  secret: <random-webhook-secret>

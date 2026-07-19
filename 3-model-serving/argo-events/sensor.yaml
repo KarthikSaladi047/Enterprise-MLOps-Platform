@@ -1,0 +1,152 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: github-pipeline-sensor
+  namespace: argo-events
+spec:
+  template:
+    serviceAccountName: argo-events-sa
+
+  dependencies:
+    - name: github-push
+      eventSourceName: github
+      eventName: push
+
+  triggers:
+    - template:
+        name: trigger-kfp
+
+        k8s:
+          operation: create
+
+          source:
+            resource:
+              apiVersion: batch/v1
+              kind: Job
+              metadata:
+                generateName: trigger-kfp-
+                namespace: kubeflow
+
+              spec:
+                ttlSecondsAfterFinished: 300
+                backoffLimit: 0
+
+                template:
+                  spec:
+                    restartPolicy: Never
+                    serviceAccountName: pipeline-runner
+
+                    nodeSelector:
+                      node-role.kubernetes.io/compute: "true"
+
+                    tolerations:
+                      - key: dedicated
+                        operator: Equal
+                        value: compute
+                        effect: NoSchedule
+
+                    containers:
+                      - name: trigger
+                        image: python:3.10
+
+                        command:
+                          - /bin/bash
+                          - -c
+
+                        env:
+                          - name: GITHUB_EVENT
+                            value: ""
+
+                          - name: GIT_REPO_URL
+                            valueFrom:
+                              secretKeyRef:
+                                name: infra-credentials
+                                key: GIT_REPO_URL
+
+                          - name: KUBEFLOW_HOST
+                            valueFrom:
+                              secretKeyRef:
+                                name: infra-credentials
+                                key: KUBEFLOW_HOST
+
+                        args:
+                          - |
+                            set -e
+
+                            apt-get update
+                            apt-get install -y git
+
+                            pip install --quiet --no-cache-dir \
+                              kfp==2.* \
+                              kfp-kubernetes
+
+                            python3 - <<'PY'
+                            import json
+                            import os
+                            import subprocess
+                            import sys
+
+                            import kfp
+
+                            event = json.loads(os.environ["GITHUB_EVENT"])
+
+                            changed = set()
+
+                            for commit in event.get("commits", []):
+                                changed.update(commit.get("added", []))
+                                changed.update(commit.get("modified", []))
+                                changed.update(commit.get("removed", []))
+
+                            print("Changed files:")
+                            for f in sorted(changed):
+                                print(" -", f)
+
+                            if not any(f.startswith("2-ml-workspace/") for f in changed):
+                                print("No changes under 2-ml-workspace/. Exiting.")
+                                sys.exit(0)
+
+                            repo = os.environ["GIT_REPO_URL"]
+
+                            subprocess.run(
+                                [
+                                    "git",
+                                    "clone",
+                                    "--branch",
+                                    "main",
+                                    repo,
+                                    "/tmp/repo",
+                                ],
+                                check=True,
+                            )
+
+                            subprocess.run(
+                                ["python3", "hf_pipeline.py"],
+                                cwd="/tmp/repo/2-ml-workspace",
+                                check=True,
+                            )
+
+                            sha = subprocess.check_output(
+                                ["git", "rev-parse", "--short", "HEAD"],
+                                cwd="/tmp/repo",
+                                text=True,
+                            ).strip()
+
+                            client = kfp.Client(
+                                host=os.environ["KUBEFLOW_HOST"]
+                            )
+
+                            client.create_run_from_pipeline_package(
+                                pipeline_file="/tmp/repo/2-ml-workspace/hf_pipeline.yaml",
+                                run_name=f"enterprise-text-classifier-{sha}",
+                                experiment_name="enterprise-text-classifier",
+                                namespace="kubeflow",
+                            )
+
+                            print(f"Successfully submitted run for commit {sha}")
+                            PY
+
+          parameters:
+            - src:
+                dependencyName: github-push
+                dataKey: body
+              dest: spec.template.spec.containers.0.env.0.value

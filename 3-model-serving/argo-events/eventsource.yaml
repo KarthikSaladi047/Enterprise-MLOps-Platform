@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: github
+  namespace: argo-events
+spec:
+  service:
+    ports:
+      - port: 12000
+        targetPort: 12000
+
+  github:
+    enterprise-mlops:
+      repositories:
+        - owner: KarthikSaladi047
+          names:
+            - Enterprise-MLOps-Platform
+
+      webhook:
+        endpoint: /github
+        port: "12000"
+        method: POST
+
+      events:
+        - push
+
+      apiToken:
+        name: github-webhook-secret
+        key: token
+
+      webhookSecret:
+        name: github-webhook-secret
+        key: secret
+
+      insecure: false
+
+      active: true
+
+      contentType: json
