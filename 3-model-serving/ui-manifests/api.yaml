@@ -22,7 +22,7 @@ spec:
             effect: "NoSchedule"
       containers:
       - name: fastapi
-        image: ghcr.io/karthiksaladi047/enterprise-mlops-platform/mlops-ui:a494a61
+        image: ghcr.io/karthiksaladi047/enterprise-mlops-platform/mlops-ui:91c386c
         command: ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
         ports:
         - containerPort: 8000
