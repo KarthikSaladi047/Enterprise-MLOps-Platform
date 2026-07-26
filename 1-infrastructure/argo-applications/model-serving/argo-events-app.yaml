@@ -1,0 +1,23 @@
+## In this project, we are using argo workflows, insted of argo events, because my k8s cluster is behind a firewall and does not allow inbound trafiic from github.
+# kind: Application
+# metadata:
+#   name: argo-events-ci
+#   namespace: argocd
+# spec:
+#   project: default
+
+#   source:
+#     repoURL: https://github.com/KarthikSaladi047/Enterprise-MLOps-Platform.git
+#     targetRevision: main
+#     path: 3-model-serving/argo-events
+
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: kubeflow
+
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true

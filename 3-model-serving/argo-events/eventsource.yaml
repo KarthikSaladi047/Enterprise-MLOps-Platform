@@ -20,6 +20,7 @@ spec:
         endpoint: /github
         port: "12000"
         method: POST
+        url: <your-domain>/github
 
       events:
         - push

@@ -9,10 +9,10 @@ spec:
   ingressClassName: nginx
 
   rules:
-  - host: github-webhook.example.com
+  - host: <your-domain>
     http:
       paths:
-      - path: /
+      - path: /github
         pathType: Prefix
         backend:
           service:

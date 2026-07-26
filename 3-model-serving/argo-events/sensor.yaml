@@ -10,7 +10,7 @@ spec:
   dependencies:
     - name: github-push
       eventSourceName: github
-      eventName: push
+      eventName: enterprise-mlops
 
   triggers:
     - template:
