@@ -7,6 +7,18 @@ resources:
 patches:
   # 1. Route all KFP Controllers & DBs to the Infra Nodes
   - target:
+      kind: Namespace
+      name: kubeflow
+    patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: kubeflow
+      labels:
+        katib.kubeflow.org/metrics-collector-injection=enabled
+        
+  - target:
       kind: Deployment
     patch: |-
       apiVersion: apps/v1
