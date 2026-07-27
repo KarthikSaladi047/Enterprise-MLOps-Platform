@@ -21,3 +21,12 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - RespectIgnoreDifferences=true
+
+  ignoreDifferences:
+    - group: ""
+      kind: Secret
+      name: katib-webhook-cert
+      namespace: kubeflow
+      jsonPointers:
+        - /data
