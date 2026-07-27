@@ -30,3 +30,13 @@ spec:
       namespace: kubeflow
       jsonPointers:
         - /data
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      name: katib.kubeflow.org
+      jqPathExpressions:
+        - '.webhooks[].clientConfig.caBundle'
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      name: katib.kubeflow.org
+      jqPathExpressions:
+        - '.webhooks[].clientConfig.caBundle'
