@@ -1,0 +1,15 @@
+# ============================================================
+# 1) Shared PVC — holds the prepped dataset + cached HF model
+#    so trial pods never re-clone/re-download per trial.
+# ============================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hpo-shared-data
+  namespace: kubeflow
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi

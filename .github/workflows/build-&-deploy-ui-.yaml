@@ -62,7 +62,7 @@ jobs:
           
           echo "Updated ui.yaml and api.yaml to use image: $NEW_IMAGE"
 
-      - name: Commit and Push Changes to ArgoCD Branch
+      - name: Commit and Push Changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"

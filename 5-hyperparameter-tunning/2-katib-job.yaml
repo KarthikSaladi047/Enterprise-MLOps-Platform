@@ -1,0 +1,82 @@
+---
+# ============================================================
+# 2) One-time data-prep Job — runs ONCE, not per trial.
+#    Clones repo, pulls dataset via DVC, writes a train/val
+#    split, and warms the HF model cache onto the shared PVC.
+#    Run this and wait for it to complete before creating the
+#    Experiment below.
+# ============================================================
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: hpo-data-prep
+  namespace: kubeflow
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: data-prep
+          image: python:3.10
+          resources:
+            requests:
+              cpu: "500m"
+              memory: 1Gi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+          env:
+            - name: GIT_REPO_URL
+              valueFrom:
+                secretKeyRef:
+                  name: infra-credentials
+                  key: GIT_REPO_URL
+            - name: AWS_ENDPOINT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: infra-credentials
+                  key: AWS_ENDPOINT_URL
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: infra-credentials
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: infra-credentials
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: HF_HOME
+              value: /shared/hf-cache
+            - name: PIP_ROOT_USER_ACTION
+              value: "ignore"
+            - name: PIP_DISABLE_PIP_VERSION_CHECK
+              value: "1"
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -e
+              apt-get update -qq && apt-get install -y --no-install-recommends git -qq \
+                && rm -rf /var/lib/apt/lists/*
+              pip install --quiet --no-cache-dir pandas "dvc[s3]"
+
+              # Never echo $GIT_REPO_URL directly — it may contain embedded credentials.
+              git clone --quiet --depth 1 "$GIT_REPO_URL" /tmp/repo 2>/tmp/clone_err.log \
+                || { echo "git clone failed (details withheld from log)"; exit 1; }
+
+              cd /tmp/repo/2-ml-workspace
+              dvc remote modify --local minio-remote endpointurl "$AWS_ENDPOINT_URL"
+              dvc remote modify --local minio-remote access_key_id "$AWS_ACCESS_KEY_ID"
+              dvc remote modify --local minio-remote secret_access_key "$AWS_SECRET_ACCESS_KEY"
+              dvc pull -r minio-remote -q
+
+              cp data/dataset.csv /shared/dataset.csv
+              echo "dataset copied to /shared/dataset.csv"
+          volumeMounts:
+            - name: shared-data
+              mountPath: /shared
+      volumes:
+        - name: shared-data
+          persistentVolumeClaim:
+            claimName: hpo-shared-data
