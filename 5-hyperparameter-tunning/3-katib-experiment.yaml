@@ -64,7 +64,7 @@ spec:
                   readOnly: true
             containers:
               - name: training-container
-                image: python:3.10-slim
+                image: ghcr.io/karthiksaladi047/enterprise-mlops-platform/training-container:c860a89
                 resources:
                   requests:
                     cpu: "1"
