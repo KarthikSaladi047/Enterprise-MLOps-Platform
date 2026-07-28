@@ -64,7 +64,7 @@ spec:
                   readOnly: true
             containers:
               - name: training-container
-                image: ghcr.io/karthiksaladi047/enterprise-mlops-platform/training-container:c860a89
+                image: ghcr.io/karthiksaladi047/enterprise-mlops-platform/training-container:9fd53fd
                 resources:
                   requests:
                     cpu: "1"
