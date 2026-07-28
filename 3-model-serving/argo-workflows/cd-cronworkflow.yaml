@@ -4,7 +4,7 @@ metadata:
   name: continuous-delivery-job
   namespace: kubeflow
 spec:
-  schedule: "*/5 * * * *"
+  schedule: "*/30 * * * *"
   concurrencyPolicy: "Forbid"
   startingDeadlineSeconds: 0
   workflowSpec:
