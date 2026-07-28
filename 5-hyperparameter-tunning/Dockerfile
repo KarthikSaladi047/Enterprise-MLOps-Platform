@@ -9,7 +9,6 @@ RUN pip install --no-cache-dir --no-compile -r requirements.txt \
 
 COPY train.py .
 
-# Not run as root
 RUN useradd --create-home --uid 1000 trainer
 USER trainer
 
