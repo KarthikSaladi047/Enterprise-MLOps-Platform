@@ -1,5 +1,5 @@
 # ============================================================
-# 1) Shared PVC — holds the prepped dataset + cached HF model
+# 1) Shared PVC — holds the prepped dataset
 #    so trial pods never re-clone/re-download per trial.
 # ============================================================
 apiVersion: v1

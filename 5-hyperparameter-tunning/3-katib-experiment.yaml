@@ -1,7 +1,7 @@
 ---
 # ============================================================
-# 3) Katib Experiment — pure HPO search. No git/dvc, no model
-#    registration. Reads pre-split data from the shared PVC.
+# 3) Katib Experiment — pure HPO search.
+#    Reads pre-split data from the shared PVC.
 #    Metrics reported via stdout ("final_loss=...") using
 #    Katib's built-in StdOut collector.
 # ============================================================
@@ -22,23 +22,23 @@ spec:
 
   algorithm:
     algorithmName: bayesianoptimization
-    
-  parallelTrialCount: 3
-  maxTrialCount: 24
-  maxFailedTrialCount: 2   # fail fast if something systemic is broken
+
+  parallelTrialCount: 10
+  maxTrialCount: 48
+  maxFailedTrialCount: 2
 
   parameters:
     - name: learning_rate
       parameterType: double
       feasibleSpace:
         min: "0.00001"
-        max: "0.0001"
+        max: "0.01"
     - name: batch_size
       parameterType: int
       feasibleSpace:
-        min: "8"
+        min: "4"
         max: "32"
-        step: "8"
+        step: "4"
 
   trialTemplate:
     primaryContainerName: training-container
@@ -73,91 +73,12 @@ spec:
                     cpu: "2"
                     memory: 4Gi
                 env:
-                  - name: GIT_PYTHON_REFRESH
-                    value: "quiet"
-                  - name: PIP_ROOT_USER_ACTION
-                    value: "ignore"
-                  - name: PIP_DISABLE_PIP_VERSION_CHECK
-                    value: "1"
                   - name: TRIAL_LEARNING_RATE
                     value: "${trialParameters.learningRate}"
                   - name: TRIAL_BATCH_SIZE
                     value: "${trialParameters.batchSize}"
-                command:
-                  - /bin/bash
-                  - -c
-                args:
-                  - |
-                    set -e
-                    pip install --quiet --no-cache-dir \
-                      "packaging>=24.0" \
-                      "transformers==4.37.1" \
-                      "torch==2.12.1" \
-                      "torchvision==0.27.1" \
-                      pandas \
-                      scikit-learn
-
-                    python3 - <<'PY'
-                    import os
-                    import warnings
-                    import pandas as pd
-                    import torch
-                    from sklearn.model_selection import train_test_split
-                    from transformers import AutoTokenizer, AutoModelForSequenceClassification
-                    from transformers import logging as hf_logging
-                    from torch.utils.data import TensorDataset, DataLoader
-
-                    warnings.filterwarnings("ignore", category=FutureWarning, module="huggingface_hub")
-                    hf_logging.set_verbosity_error()
-
-                    learning_rate = float(os.environ["TRIAL_LEARNING_RATE"])
-                    batch_size = int(os.environ["TRIAL_BATCH_SIZE"])
-
-                    df = pd.read_csv("/shared/dataset.csv")
-                    train_df, val_df = train_test_split(
-                        df, test_size=0.2, random_state=42,
-                        stratify=df["label"] if df["label"].nunique() > 1 else None
-                    )
-
-                    model_name = "prajjwal1/bert-tiny"
-                    tokenizer = AutoTokenizer.from_pretrained(model_name)
-                    model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
-
-                    def make_loader(df, shuffle):
-                        enc = tokenizer(
-                            df["text"].tolist(), padding=True, truncation=True,
-                            max_length=512, return_tensors="pt"
-                        )
-                        labels = torch.tensor(df["label"].tolist())
-                        ds = TensorDataset(enc["input_ids"], enc["attention_mask"], labels)
-                        return DataLoader(ds, batch_size=batch_size, shuffle=shuffle)
-
-                    train_loader = make_loader(train_df, shuffle=True)
-                    val_loader = make_loader(val_df, shuffle=False)
-
-                    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
-
-                    epochs = 3
-                    for epoch in range(epochs):
-                        model.train()
-                        for b_ids, b_mask, b_labels in train_loader:
-                            optimizer.zero_grad()
-                            out = model(input_ids=b_ids, attention_mask=b_mask, labels=b_labels)
-                            out.loss.backward()
-                            optimizer.step()
-
-                    # Validation loss is the metric Katib actually optimizes against
-                    model.eval()
-                    val_loss_total = 0.0
-                    with torch.no_grad():
-                        for b_ids, b_mask, b_labels in val_loader:
-                            out = model(input_ids=b_ids, attention_mask=b_mask, labels=b_labels)
-                            val_loss_total += out.loss.item()
-                    val_loss = val_loss_total / len(val_loader)
-
-                    # Picked up by Katib's StdOut metrics collector (name=value format)
-                    print(f"final_loss={val_loss}")
-                    PY
+                  - name: DATASET_PATH
+                    value: /shared/dataset.csv
                 volumeMounts:
                   - name: shared-data
                     mountPath: /shared
