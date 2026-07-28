@@ -6,8 +6,6 @@ on:
       - main
     paths:
       - "5-hyperparameter-tunning/**"
-    paths-ignore:
-      - "5-hyperparameter-tunning/3-katib-experiment.yaml"
 
   workflow_dispatch:
 
@@ -20,6 +18,7 @@ permissions:
 
 jobs:
   build-and-push:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
 
     steps:
